@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>재미로 보는 크립토 매매 전략 - 0xJKLab</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM (v18) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Prop-Types (Recharts dependency) -->
+    <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+    
+    <!-- Recharts (Stable Version) -->
+    <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+    
+    <!-- Babel (for JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { background-color: #0f172a; color: #f1f5f9; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+        const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } = Recharts;
+
+        // --- Icon Helper Component (Fixed for CDN usage) ---
+        const Icon = ({ name, className, size = 24, ...props }) => {
+            const containerRef = useRef(null);
+
+            useEffect(() => {
+                if (typeof lucide === 'undefined') return;
+                
+                const container = containerRef.current;
+                if (!container) return;
+
+                container.innerHTML = '';
+
+                const iconElement = document.createElement('i');
+                iconElement.setAttribute('data-lucide', name);
+                
+                if (className) {
+                    iconElement.setAttribute('class', className);
+                }
+                
+                container.appendChild(iconElement);
+
+                lucide.createIcons({
+                    root: container,
+                    nameAttr: 'data-lucide',
+                    attrs: {
+                        width: size,
+                        height: size,
+                        ...props
+                    }
+                });
+            }, [name, className, size, JSON.stringify(props)]);
+
+            return <span ref={containerRef} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} />;
+        };
+
+        // Define Icons used
+        const RefreshCw = (props) => <Icon name="refresh-cw" {...props} />;
+        const AlertTriangle = (props) => <Icon name="alert-triangle" {...props} />;
+        const ExternalLink = (props) => <Icon name="external-link" {...props} />;
+        const Youtube = (props) => <Icon name="youtube" {...props} />;
+        const BarChart2 = (props) => <Icon name="bar-chart-2" {...props} />;
+        const Info = (props) => <Icon name="info" {...props} />;
+        const TrendingUp = (props) => <Icon name="trending-up" {...props} />;
+        const Wallet = (props) => <Icon name="wallet" {...props} />;
+        const UserCheck = (props) => <Icon name="user-check" {...props} />;
+        const Globe = (props) => <Icon name="globe" {...props} />;
+        const MapPin = (props) => <Icon name="map-pin" {...props} />;
+        const Zap = (props) => <Icon name="zap" {...props} />;
+        const Clock = (props) => <Icon name="clock" {...props} />;
+        const Target = (props) => <Icon name="target" {...props} />;
+        const ArrowDownCircle = (props) => <Icon name="arrow-down-circle" {...props} />;
+        const ArrowUpCircle = (props) => <Icon name="arrow-up-circle" {...props} />;
+        const PieChart = (props) => <Icon name="pie-chart" {...props} />;
+        const Gavel = (props) => <Icon name="gavel" {...props} />;
+        const Layers = (props) => <Icon name="layers" {...props} />;
+        const LogOut = (props) => <Icon name="log-out" {...props} />;
+        const CheckCircle = (props) => <Icon name="check-circle" {...props} />;
+        const Activity = (props) => <Icon name="activity" {...props} />;
+        const Triangle = (props) => <Icon name="triangle" {...props} />;
+        const Repeat = (props) => <Icon name="repeat" {...props} />;
+
+
+        // --- 전문가 데이터베이스 ---
+        const EXPERTS = [
+            {
+                id: 'fuzz',
+                name: '불장TV, 퍼즈(ppause)',
+                category: '국내',
+                feature: '정통 기술적 분석 & 시황',
+                title: '퍼즈의 코인팩토리 & 불장TV',
+                reason: '"논리적인 차트 분석과 빠른 대응"',
+                achievement: '엘리어트 파동/매물대 분석과 신속한 정보 전달로 시장의 큰 흐름과 구체적인 대응 영역을 명확히 제시.',
+                style: 'fuzz',
+                color: 'text-violet-400'
+            },
+            {
+                id: 'ki_young_ju',
+                name: '주기영 (Ki Young Ju)',
+                category: '국내',
+                feature: '온체인 데이터/고래',
+                title: 'CryptoQuant 대표',
+                reason: '"비트코인 1억 5천만 원 돌파" 데이터 예측',
+                achievement: 'ETF 자금 유입 데이터 기반으로 구체적 목표가 제시 및 적중. 고래 지갑 데이터 분석의 1인자.',
+                style: 'onchain',
+                color: 'text-indigo-400'
+            },
+            {
+                id: 'peter_jung',
+                name: '정석문 (Peter Jung)',
+                category: '국내',
+                feature: '기관 수급/규제',
+                title: '프레스토 리서치센터장',
+                reason: '"미국 ETF 승인과 기관 자금 흐름" 분석',
+                achievement: '현물 ETF 승인 후 시장 변화 및 미국 대선 규제 완화 예측 적중. 기관 관점 분석.',
+                style: 'institution',
+                color: 'text-slate-400'
+            },
+            {
+                id: 'taemin',
+                name: '오태민 (지혜의 족보)',
+                category: '국내',
+                feature: '인문학/전략자산',
+                title: '비트코인 인문학자',
+                reason: '"비트코인 국가 전략 자산화" 시나리오',
+                achievement: '수년 전부터 비트코인의 "전략 자산화" 주장, 최근 트럼프 행정부 정책과 일치하며 선지자급 재평가.',
+                style: 'philosophy',
+                color: 'text-amber-600'
+            },
+            {
+                id: 'wonyyotti',
+                name: '워뇨띠 (Wonyyotti)',
+                category: '국내',
+                feature: '실전 심리/RSI',
+                title: '전설적인 트레이더',
+                reason: '"실전 매매의 신" (시장 심리 지표)',
+                achievement: '2025년 변동성 장세에서도 압도적 수익 인증. 롱/숏 포지션 자체가 거대한 시장 지표.',
+                style: 'trader',
+                color: 'text-pink-400'
+            },
+            {
+                id: 'daehoon',
+                name: '한대훈 (SK증권)',
+                category: '국내',
+                feature: '제도권 금융/매크로',
+                title: 'SK증권 애널리스트',
+                reason: '"제도권 금융과 코인 시장의 연결"',
+                achievement: '금리 인하와 반등 시점 상관관계 분석. 합리적인 중장기 투자 구간 제시.',
+                style: 'macro',
+                color: 'text-teal-400'
+            },
+            {
+                id: 'davinci',
+                name: 'Davinci Jeremie',
+                category: '해외',
+                feature: '존버/심리 (선지자)',
+                title: '비트코인 선지자 (유튜버)',
+                reason: '"제발 1달러어치라도 사라" 호소',
+                achievement: '2013년 $1 시절부터 강력 매수 추천. 하락장에서도 멘탈을 잡아주는 "Hold" 정신의 상징.',
+                style: 'davinci',
+                color: 'text-yellow-500'
+            },
+            {
+                id: 'benjamin',
+                name: 'Benjamin Cowen',
+                category: '해외',
+                feature: '보수적 추세 추종',
+                title: 'Into The Cryptoverse 설립자',
+                reason: '"알트코인 대학살(Reckoning)" 적중',
+                achievement: '2024-25년 비트코인 도미넌스 60% 도달 예측 적중. 알트코인 약세장을 정확히 예견함.',
+                style: 'conservative',
+                color: 'text-purple-400'
+            },
+            {
+                id: 'peter_brandt',
+                name: 'Peter Brandt',
+                category: '해외',
+                feature: '고점 패턴 분석',
+                title: '50년 경력의 차트 분석가',
+                reason: '"2025년 고점 패턴과 조정" 경고',
+                achievement: '비트코인 신고가 랠리 및 최근 급격한 조정장(Shakeout)을 과거 반감기 사이클과 비교해 적중.',
+                style: 'pattern',
+                color: 'text-amber-400'
+            },
+            {
+                id: 'rekt',
+                name: 'Rekt Capital',
+                category: '해외',
+                feature: '반감기/매집구간',
+                title: '반감기 사이클 전문가',
+                reason: '"반감기 이후 재매집 구간" 분석',
+                achievement: '하락장이 아닌 "건강한 재매집(Re-accumulation)" 구간임을 정의하며 주요 지지 라인 타점 제공.',
+                style: 'support',
+                color: 'text-blue-400'
+            },
+            {
+                id: 'mikybull',
+                name: 'Mikybull Crypto',
+                category: '해외',
+                feature: '거시 바닥/기회',
+                title: '매크로 & 기술적 분석가',
+                reason: '"거시적 바닥과 단기 조정" 예측',
+                achievement: '2022년 최저점 적중 및 2025년 말 조정장을 "마지막 딥(Dip)"으로 규정하여 공포 해소.',
+                style: 'opportunity',
+                color: 'text-green-400'
+            },
+            {
+                id: 'jason',
+                name: 'Jason Pizzino',
+                category: '해외',
+                feature: '부동산 사이클 연동',
+                title: '부동산/주식 사이클 전문가',
+                reason: '"부동산/주식 사이클과 연동된 강세장"',
+                achievement: '18.6년 부동산 사이클 이론을 접목해 2025-26년 자산 시장 정점 예측.',
+                style: 'cycle',
+                color: 'text-orange-400'
+            }
+        ];
+
+        // --- 유틸리티 함수 ---
+        const fetchCandles = async (market = 'KRW-BTC', count = 100) => {
+            try {
+                const upbitUrl = `https://api.upbit.com/v1/candles/minutes/60?market=${market}&count=${count}`;
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(upbitUrl)}&timestamp=${new Date().getTime()}`;
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                const data = await response.json();
+                if (!Array.isArray(data)) throw new Error("Invalid Data Format");
+
+                return data.reverse().map(item => ({
+                timestamp: item.candle_date_time_kst,
+                price: item.trade_price,
+                vol: item.candle_acc_trade_volume,
+                time: item.candle_date_time_kst.slice(11, 16)
+                }));
+            } catch (error) {
+                console.warn("Upbit API Fetch via Proxy Failed. Using Mock Data.", error);
+                const basePrice = market === 'KRW-BTC' ? 135000000 : market === 'KRW-ETH' ? 4500000 : 1000;
+                return Array.from({ length: 50 }, (_, i) => ({
+                time: `${10 + Math.floor(i/2)}:${i%2 === 0 ? '00' : '30'}`,
+                price: basePrice * (1 + 0.02 * Math.sin(i/5)),
+                vol: Math.random() * 10
+                }));
+            }
+        };
+
+        const calculateRSI = (prices, period = 14) => {
+            if (prices.length < period) return 50;
+            let gains = 0;
+            let losses = 0;
+            for (let i = 1; i < period + 1; i++) {
+                const diff = prices[i] - prices[i - 1];
+                if (diff >= 0) gains += diff; else losses -= diff;
+            }
+            return 100 - (100 / (1 + (gains / period) / (losses / period)));
+        };
+
+        const calculateMA = (prices, period) => {
+            if (prices.length < period) return 0;
+            return prices.slice(prices.length - period).reduce((a, b) => a + b, 0) / period;
+        };
+
+        const getPriceFontSize = (price, splitCount) => {
+            const priceStr = Math.floor(Number(price)).toLocaleString();
+            const length = priceStr.length;
+            
+            if (splitCount >= 5) {
+                if (length > 10) return 'text-xs sm:text-sm';
+                if (length > 7) return 'text-sm sm:text-base'; 
+                return 'text-base sm:text-lg';
+            } else if (splitCount === 4) {
+                if (length > 10) return 'text-sm sm:text-base';
+                return 'text-base sm:text-xl';
+            } else {
+                if (length > 10) return 'text-base sm:text-xl';
+                return 'text-xl sm:text-2xl';
+            }
+        };
+
+        // --- Main Component ---
+        const CryptoDashboard = () => {
+            const [selectedCoin, setSelectedCoin] = useState('KRW-BTC');
+            const [customTickerInput, setCustomTickerInput] = useState('');
+            const [selectedExpertId, setSelectedExpertId] = useState('fuzz');
+            const [chartData, setChartData] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [lastUpdated, setLastUpdated] = useState(null);
+            const [analysis, setAnalysis] = useState(null);
+            const [logoError, setLogoError] = useState(false);
+            const [splitCount, setSplitCount] = useState(3);
+            const [tradeType, setTradeType] = useState('SELL'); // 'BUY' or 'SELL'
+
+            const currentExpert = useMemo(() => EXPERTS.find(e => e.id === selectedExpertId) || EXPERTS[0], [selectedExpertId]);
+
+            const coins = [
+                { code: 'KRW-BTC', name: '비트코인', ticker: 'BTC' },
+                { code: 'KRW-ETH', name: '이더리움', ticker: 'ETH' },
+                { code: 'KRW-XRP', name: '리플', ticker: 'XRP' },
+                { code: 'KRW-SOL', name: '솔라나', ticker: 'SOL' },
+                { code: 'KRW-DOGE', name: '도지코인', ticker: 'DOGE' },
+            ];
+
+            const calculateSplitSteps = (startPrice, endPrice, count, type) => {
+                const steps = [];
+                const priceGap = Math.abs(endPrice - startPrice) / (count - 1);
+                
+                let ratios = [];
+                if (count === 3) ratios = ['30%', '30%', '40%'];
+                else if (count === 4) ratios = ['20%', '25%', '25%', '30%'];
+                else if (count === 5) ratios = ['10%', '15%', '20%', '25%', '30%'];
+
+                for (let i = 0; i < count; i++) {
+                    const price = type === 'SELL' 
+                        ? startPrice + (priceGap * i) 
+                        : startPrice - (priceGap * i);
+
+                    let desc = '';
+                    if (type === 'SELL') {
+                        if (i === 0) desc = '1차 익절';
+                        else if (i === count - 1) desc = '최종 매도';
+                        else desc = `${i + 1}차 분할`;
+                    } else {
+                        if (i === 0) desc = '1차 진입';
+                        else if (i === count - 1) desc = '최종 바닥';
+                        else desc = `${i + 1}차 분할`;
+                    }
+
+                    steps.push({
+                        label: `${i + 1}차`,
+                        price: price > 0 ? price : 0,
+                        ratio: ratios[i] || ' 균등',
+                        desc: desc
+                    });
+                }
+                return steps;
+            };
+
+            const analyzeMarket = (data, expert, type) => {
+                const prices = data.map(d => d.price);
+                const vols = data.map(d => d.vol);
+                const currentPrice = prices[prices.length - 1];
+                const maxPrice = Math.max(...prices); 
+                const minPrice = Math.min(...prices);
+                const rsi = calculateRSI(prices);
+                const ma20 = calculateMA(prices, 20);
+                const ma60 = calculateMA(prices, 60);
+                
+                let score = 50; 
+                let expertOpinion = "";
+                let strategyTitle = "관망 (Hold)";
+                let detailedAction = "";
+                let analysisSource = "일반적 분석 (General)"; 
+
+                let targetMultiplierShort = type === 'SELL' ? 1.02 : 0.98;
+                let targetMultiplierMedium = type === 'SELL' ? 1.05 : 0.95;
+                let targetMultiplierLong = type === 'SELL' ? 1.2 : 0.8;
+
+                switch (expert.style) {
+                case 'davinci':
+                case 'philosophy':
+                    analysisSource = `${expert.name} 견해`;
+                    if (rsi > 85) { score += 20; expertOpinion = "가격 폭등 중! 즐기되 물량은 지키세요."; } 
+                    else if (rsi < 35) { score -= 40; expertOpinion = "공포 구간? 아니요, 인생을 바꿀 기회입니다. Buy!"; } 
+                    else { score -= 20; expertOpinion = "흔들리지 마세요. 우상향 믿음을 가지세요."; }
+                    if (type === 'SELL') { targetMultiplierShort = 1.05; targetMultiplierMedium = 1.3; targetMultiplierLong = 2.0; }
+                    else { targetMultiplierShort = 0.95; targetMultiplierMedium = 0.85; targetMultiplierLong = 0.7; } 
+                    break;
+
+                case 'fuzz':
+                    analysisSource = `${expert.name} 견해`;
+                    if (rsi > 75) { score += 30; expertOpinion = "단기 과열. 리스크 관리하며 부분 익절 고려하세요."; } 
+                    else if (rsi < 30) { score -= 30; expertOpinion = "과매도 진입. 바닥 잡기 좋은 구간입니다."; } 
+                    else { score = 45; expertOpinion = "추세 양호합니다. 잦은 매매보다 엉덩이 무겁게 버티세요."; }
+                    if (type === 'SELL') { targetMultiplierShort = 1.03; targetMultiplierMedium = 1.15; targetMultiplierLong = 1.618; }
+                    else { targetMultiplierShort = 0.98; targetMultiplierMedium = 0.92; targetMultiplierLong = 0.85; }
+                    break;
+
+                default: 
+                    analysisSource = "일반적 분석 (표준 지표)";
+                    if (currentPrice > ma20) { expertOpinion = "단기 상승세 유효."; score -= 10; }
+                    else { expertOpinion = "단기 조정세 주의."; score += 10; }
+                    if (rsi > 70) score += 20;
+                    if (rsi < 30) score -= 20;
+                    break;
+                }
+
+                // 강도 계산
+                let sellStrength = 0;
+                let buyStrength = 0;
+                if (score > 50) { sellStrength = (score - 50) * 2; buyStrength = 0; } 
+                else { buyStrength = (50 - score) * 2; sellStrength = 0; }
+
+                let actionColor = "text-slate-400";
+                if (score >= 75) { strategyTitle = "적극 매도 (Strong Sell)"; detailedAction = "비중 50% 현금화 추천"; actionColor = "text-red-500"; } 
+                else if (score >= 60) { strategyTitle = "분할 매도 (Scaling Out)"; detailedAction = "상승 시마다 분할 매도"; actionColor = "text-orange-400"; } 
+                else if (score <= 25) { strategyTitle = "적극 매수 (Strong Buy)"; detailedAction = "현금 30% 과감한 진입"; actionColor = "text-green-500"; } 
+                else if (score <= 40) { strategyTitle = "저점 매집 (Accumulate)"; detailedAction = "지지선 분할 매수"; actionColor = "text-emerald-400"; } 
+                else { strategyTitle = "관망 (Hold)"; detailedAction = "포지션 유지"; actionColor = "text-blue-400"; }
+
+                let strategies = [];
+                let lumpSumStrategy = {};
+
+                if (type === 'SELL') {
+                    const shortSteps = calculateSplitSteps(currentPrice * 1.005, currentPrice * targetMultiplierShort, splitCount, 'SELL');
+                    const mediumSteps = calculateSplitSteps(currentPrice * 1.02, currentPrice * targetMultiplierMedium, splitCount, 'SELL');
+                    const longSteps = calculateSplitSteps(maxPrice, maxPrice * targetMultiplierLong, splitCount, 'SELL');
+
+                    strategies = [
+                        { term: '단기 (Short)', desc: `1~3일 스윙 (${splitCount}분할 매도)`, color: 'border-cyan-500/50 text-cyan-400', steps: shortSteps, lumpSumPrice: currentPrice * targetMultiplierShort, lumpSumRatio: '전량 익절', source: analysisSource },
+                        { term: '중기 (Medium)', desc: `1~2주 추세 (${splitCount}분할 매도)`, color: 'border-yellow-500/50 text-yellow-400', steps: mediumSteps, lumpSumPrice: maxPrice, lumpSumRatio: '전량 익절', source: analysisSource },
+                        { term: '장기 (Long)', desc: `1달 이상 가치 (${splitCount}분할 매도)`, color: 'border-purple-500/50 text-purple-400', steps: longSteps, lumpSumPrice: maxPrice * targetMultiplierLong, lumpSumRatio: '졸업', source: analysisSource }
+                    ];
+                    lumpSumStrategy = {
+                        profit: { 
+                            title: "불장 졸업 (전량 익절)", 
+                            price: maxPrice * targetMultiplierLong, 
+                            condition: "거래량 폭발 & RSI > 80", 
+                            className: "bg-gradient-to-br from-red-900/40 to-orange-900/40 border-l-8 border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.15)]" 
+                        },
+                        stopLoss: { 
+                            title: "추세 붕괴 (전량 손절)", 
+                            price: ma60 * 0.97, 
+                            condition: "MA60 하향 돌파 시 즉시", 
+                            className: "bg-gradient-to-br from-blue-900/40 to-slate-900/40 border-l-8 border-blue-500/80 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                        }
+                    };
+                } else {
+                    const shortSteps = calculateSplitSteps(currentPrice * 0.995, currentPrice * targetMultiplierShort, splitCount, 'BUY');
+                    const mediumSteps = calculateSplitSteps(Math.min(currentPrice, ma20), ma60 * targetMultiplierMedium, splitCount, 'BUY');
+                    const longSteps = calculateSplitSteps(ma60, minPrice * targetMultiplierLong, splitCount, 'BUY'); 
+
+                    strategies = [
+                        { term: '단기 (Short)', desc: `1~3일 스윙 (${splitCount}분할 매수)`, color: 'border-cyan-500/50 text-cyan-400', steps: shortSteps, lumpSumPrice: ma20, lumpSumRatio: '전량 진입', source: analysisSource },
+                        { term: '중기 (Medium)', desc: `1~2주 추세 (${splitCount}분할 매수)`, color: 'border-yellow-500/50 text-yellow-400', steps: mediumSteps, lumpSumPrice: ma60, lumpSumRatio: '전량 진입', source: analysisSource },
+                        { term: '장기 (Long)', desc: `1달 이상 가치 (${splitCount}분할 매수)`, color: 'border-purple-500/50 text-purple-400', steps: longSteps, lumpSumPrice: minPrice, lumpSumRatio: '바닥 매수', source: analysisSource }
+                    ];
+                    lumpSumStrategy = {
+                        profit: { 
+                            title: "강력 지지 (일괄 매수)", 
+                            price: ma60, 
+                            condition: "MA60 지지 확인 후 진입", 
+                            className: "bg-gradient-to-br from-emerald-900/40 to-teal-900/40 border-l-8 border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                        }, 
+                        stopLoss: { 
+                            title: "지하 뚫림 (매수 보류)", 
+                            price: minPrice * 0.95, 
+                            condition: "전저점 이탈 시 관망", 
+                            className: "bg-gradient-to-br from-gray-800 to-slate-900 border-l-8 border-gray-600/80 shadow-[0_0_15px_rgba(100,116,139,0.15)]"
+                        }
+                    };
+                }
+                
+                // 50 ~ -50 스케일 변환
+                const displayScore = 50 - score;
+
+                return { 
+                    currentPrice, rsi: rsi.toFixed(2), ma20, expertOpinion, strategyTitle, detailedAction, actionColor, score, displayScore,
+                    buyStrength, sellStrength, analysisSource,
+                    strategies, lumpSumStrategy
+                };
+            };
+
+            const loadData = async () => {
+                setLoading(true);
+                const targetCoin = selectedCoin === 'CUSTOM' ? customTickerInput.trim().toUpperCase() : selectedCoin;
+                if (!targetCoin) { setLoading(false); return; }
+
+                const data = await fetchCandles(targetCoin);
+                setChartData(data);
+                const result = analyzeMarket(data, currentExpert, tradeType);
+                setAnalysis(result);
+                setLastUpdated(new Date().toLocaleString('ko-KR'));
+                setLoading(false);
+            };
+
+            useEffect(() => { 
+                if (selectedCoin !== 'CUSTOM') { loadData(); }
+            }, [selectedCoin, selectedExpertId, splitCount, tradeType]); 
+
+            // 매매 강도 지수 단계별 색상/라벨 정의 (11단계: 매수 5단계 ~ 중립 ~ 매도 5단계)
+            // 수정: 색상을 밝은색 계열로 변경 (Emerald -> Yellow, Rose -> Pink/Purple)
+            const getSentimentSegments = () => {
+                const segments = [];
+                // Buy (5 steps: 5->1) - 밝은 녹색/라임색 계열
+                const buyColors = [
+                    'bg-emerald-600 text-white', // 5단계
+                    'bg-emerald-500 text-white', 
+                    'bg-emerald-400 text-slate-900', 
+                    'bg-emerald-300 text-slate-900', 
+                    'bg-emerald-200 text-slate-900'  // 1단계
+                ];
+                
+                for (let i = 0; i < 5; i++) {
+                    // 숫자 굵게 (font-black)
+                    segments.push({ label: `${5-i}`, color: buyColors[i] });
+                }
+
+                // Neutral
+                segments.push({ label: '0', color: 'bg-slate-400 text-slate-900 border border-slate-300' });
+
+                // Sell (5 steps: 1->5) - 밝은 빨강/분홍색 계열
+                const sellColors = [
+                    'bg-rose-200 text-slate-900', // 1단계
+                    'bg-rose-300 text-slate-900',
+                    'bg-rose-400 text-white',
+                    'bg-rose-500 text-white',
+                    'bg-rose-600 text-white'  // 5단계
+                ];
+
+                for (let i = 0; i < 5; i++) {
+                    segments.push({ label: `${i+1}`, color: sellColors[i] });
+                }
+                return segments;
+            };
+
+            const getActiveSegmentIndex = (score) => {
+                if (score === null || score === undefined) return 5; 
+                let index = Math.floor((score / 100) * 11);
+                if (index > 10) index = 10;
+                if (index < 0) index = 0;
+                return index;
+            };
+
+            // 점수(0~100)를 단계 텍스트로 변환
+            const getStepLabel = (score) => {
+                if (score === null || score === undefined) return '분석 대기';
+                if (score <= 45) { // Buy Area (0~45)
+                    const step = Math.ceil((50 - score) / 10);
+                    return `매수 ${step > 5 ? 5 : step}단계`;
+                } else if (score >= 55) { // Sell Area (55~100)
+                    const step = Math.ceil((score - 50) / 10);
+                    return `매도 ${step > 5 ? 5 : step}단계`;
+                } else {
+                    return '중립 (0)';
+                }
+            };
+
+            const sentimentSegments = getSentimentSegments();
+            const activeIndex = useMemo(() => getActiveSegmentIndex(analysis?.score), [analysis?.score]);
+            const stepLabel = useMemo(() => getStepLabel(analysis?.score), [analysis?.score]);
+            
+            // --- 마커 위치 계산 (칸의 정중앙) ---
+            const markerPosition = useMemo(() => {
+                 if (activeIndex === null || activeIndex === undefined) return 50;
+                 const segmentWidth = 100 / 11; // 각 칸의 너비 (%)
+                 const centerOffset = segmentWidth / 2; // 칸의 중앙
+                 return (activeIndex * segmentWidth) + centerOffset; // n번째 칸의 시작점 + 반너비
+            }, [activeIndex]);
+
+
+            return (
+                <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-4 md:p-8 pb-16 relative">
+                <header className="flex flex-col gap-6 border-b border-slate-700 pb-6 max-w-6xl mx-auto w-full">
+                    {/* 제목 영역 */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                            <div>
+                                <h1 className="text-lg sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent flex items-center gap-2 whitespace-nowrap">
+                                전문가 스타일로 분석한 실전 매매 시뮬레이션
+                                </h1>
+                                <p className="text-slate-400 text-lg mt-2 flex items-center gap-2 font-medium">
+                                <UserCheck className="w-5 h-5" />
+                                <span>재미로 보는 크립토 매매 전략</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 컨트롤러 영역: 티커명, 전문가, 실행 버튼 (부제목 아래 위치) */}
+                    <div className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm">
+                        <div className="flex flex-wrap items-end gap-4">
+                            <div className="flex flex-col gap-1">
+                                <span className="text-xs text-slate-400 font-bold ml-1">티커명</span>
+                                <div className="flex items-center gap-2">
+                                    <select 
+                                        value={selectedCoin} 
+                                        onChange={(e) => setSelectedCoin(e.target.value)}
+                                        className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-auto min-w-[160px]"
+                                    >
+                                        {coins.map(c => <option key={c.code} value={c.code}>{c.name} ({c.ticker})</option>)}
+                                        <option value="CUSTOM">기타 (직접입력)</option>
+                                    </select>
+                                    {selectedCoin === 'CUSTOM' && (
+                                        <input type="text" value={customTickerInput} onChange={(e) => setCustomTickerInput(e.target.value)} placeholder="예: KRW-ADA" className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-32" />
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="h-8 w-px bg-slate-600 mx-1 hidden md:block mb-1"></div>
+
+                            <div className="flex flex-col gap-1 flex-1 min-w-[300px]">
+                                <span className="text-xs text-slate-400 font-bold ml-1">전문가</span>
+                                <div className="relative w-full">
+                                    <select 
+                                        value={selectedExpertId}
+                                        onChange={(e) => setSelectedExpertId(e.target.value)}
+                                        className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-full"
+                                    >
+                                        <optgroup label="🇰🇷 국내 전문가">
+                                            {EXPERTS.filter(e => e.category === '국내').map(e => (
+                                                <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
+                                            ))}
+                                        </optgroup>
+                                        <optgroup label="🌎 해외 전문가">
+                                            {EXPERTS.filter(e => e.category === '해외').map(e => (
+                                                <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
+                                            ))}
+                                        </optgroup>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button onClick={loadData} className={`bg-blue-600 hover:bg-blue-700 p-2 rounded text-white transition-all h-10 mb-0 ${loading ? 'opacity-50' : ''}`} title="분석 실행">
+                                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="flex flex-col gap-6 mb-8 max-w-6xl mx-auto w-full">
+                    
+                    {/* 1. 차트 영역 */}
+                    <div className="bg-slate-800 rounded-xl p-5 shadow-lg border border-slate-700 w-full">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="font-bold text-lg flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-yellow-500"/> 
+                                실시간 차트 ({selectedCoin === 'CUSTOM' ? (customTickerInput || '직접 입력') : coins.find(c => c.code === selectedCoin)?.name})
+                            </h2>
+                            <div className="text-right">
+                                <span className="text-2xl font-bold text-white mr-2">
+                                    {analysis ? Math.floor(Number(analysis.currentPrice)).toLocaleString() : '---'}
+                                </span>
+                                <span className="text-slate-400 text-sm">KRW</span>
+                            </div>
+                        </div>
+                        <div className="h-[320px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={chartData}>
+                                    <defs>
+                                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#EAB308" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#EAB308" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                    <XAxis dataKey="time" stroke="#94a3b8" fontSize={12} tickMargin={10} />
+                                    <YAxis domain={['auto', 'auto']} stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${val/10000}만`} width={60} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f1f5f9' }} itemStyle={{ color: '#fcd34d' }} formatter={(value) => [`${Math.floor(Number(value)).toLocaleString()} 원`, '가격']} />
+                                    <Area type="monotone" dataKey="price" stroke="#EAB308" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" />
+                                    {analysis && <ReferenceLine y={analysis.ma20} stroke="#3b82f6" strokeDasharray="3 3" />}
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* 2. 전문가 프로필 */}
+                    <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-lg w-full">
+                        <div className="bg-slate-700/50 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-slate-900 border border-slate-600 ${currentExpert.color}`}>
+                                    <UserCheck className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg text-white flex items-center gap-2">
+                                        {currentExpert.name}
+                                        <span className="text-xs px-2 py-0.5 bg-slate-600 rounded-full text-slate-300 font-normal flex items-center gap-1">
+                                            {currentExpert.category === '해외' ? <Globe className="w-3 h-3"/> : <MapPin className="w-3 h-3"/>}
+                                            {currentExpert.category}
+                                        </span>
+                                    </h3>
+                                    <p className="text-sm text-slate-400">{currentExpert.title}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 className="text-xs font-bold text-yellow-500 uppercase tracking-wider mb-2">👑 선정 이유 & 대표 관점</h4>
+                                <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded border border-slate-700">{currentExpert.reason}</p>
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">📈 최근 성과 (적중 이력)</h4>
+                                <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded border border-slate-700">{currentExpert.achievement}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 3. 전문가 종합 판정 (Verdict) */}
+                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-1 shadow-xl ring-1 ring-slate-700 w-full">
+                        <div className="bg-slate-800/80 backdrop-blur rounded-lg p-6 flex flex-col">
+                            <div className="mb-6 text-center">
+                                <h3 className="text-slate-300 text-xl font-bold uppercase tracking-widest mb-1 flex items-center justify-center gap-2">
+                                    <Gavel className="w-6 h-6 text-yellow-500" />
+                                    전문가 종합 판정
+                                </h3>
+                                <div className="text-xs text-slate-500 mb-4 flex justify-center items-center gap-1">
+                                    <Activity className="w-3 h-3"/>
+                                    판정 기준: <span className="text-slate-300 font-medium">{analysis ? analysis.analysisSource : '분석 대기'}</span>
+                                </div>
+
+                                <div className={`text-3xl font-black ${analysis?.actionColor || 'text-white'} tracking-tight`}>
+                                    {analysis ? analysis.strategyTitle : "분석 대기 중..."}
+                                </div>
+                            </div>
+
+                            <div className="mb-8 px-2 md:px-8">
+                                <h4 className="text-slate-400 text-lg font-bold uppercase tracking-wider mb-3 text-center">
+                                    매매 강도 지수 (Sentiment Index)
+                                </h4>
+                                
+                                {/* Step Gauge Container (Enhanced Border & Bright Colors) */}
+                                <div className="relative w-full flex justify-between gap-1 border-4 border-slate-500 rounded-lg p-1 bg-slate-800 shadow-xl">
+                                    {/* Buy Steps (5-1) */}
+                                    {sentimentSegments.slice(0, 5).map((seg, i) => (
+                                        <div key={`buy-${i}`} className={`h-8 flex-1 rounded-sm transition-all duration-300 flex items-center justify-center text-[12px] font-black ${seg.color} ${activeIndex === i ? 'ring-2 ring-white opacity-100 scale-110 z-10 shadow-lg' : 'opacity-30'}`}>
+                                            {/* 숫자 굵게 (font-black) */}
+                                            <span className={activeIndex === i ? "text-white drop-shadow-md" : "text-slate-900/80"}>{seg.label}</span>
+                                        </div>
+                                    ))}
+                                    
+                                    {/* Neutral (0) */}
+                                    <div className={`h-8 flex-1 rounded-sm transition-all duration-300 bg-slate-500 flex items-center justify-center text-[12px] font-black ${activeIndex === 5 ? 'ring-2 ring-white opacity-100 scale-110 z-10 shadow-lg' : 'opacity-30'}`}>
+                                        <span className="text-white">0</span>
+                                    </div>
+
+                                    {/* Sell Steps (1-5) */}
+                                    {sentimentSegments.slice(6).map((seg, i) => (
+                                        <div key={`sell-${i}`} className={`h-8 flex-1 rounded-sm transition-all duration-300 flex items-center justify-center text-[12px] font-black ${seg.color} ${activeIndex === i + 6 ? 'ring-2 ring-white opacity-100 scale-110 z-10 shadow-lg' : 'opacity-30'}`}>
+                                            <span className={activeIndex === i + 6 ? "text-white drop-shadow-md" : "text-slate-900/80"}>{seg.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Current Step Display (Marker Arrow - UP) */}
+                                <div className="text-center mt-1 h-8 relative w-full">
+                                    <div className="absolute transition-all duration-500 ease-out" style={{ left: `${markerPosition}%`, transform: 'translateX(-50%)' }}>
+                                         {/* 화살표 방향 반전: 정삼각형 (▲) */}
+                                         <Triangle className="w-6 h-6 text-yellow-400 fill-yellow-400 -mt-1" />
+                                    </div>
+                                </div>
+                                <div className="text-center mt-1">
+                                    <span className={`text-xl font-bold block ${analysis?.score <= 45 ? 'text-emerald-400' : analysis?.score >= 55 ? 'text-red-400' : 'text-slate-300'}`}>
+                                        {stepLabel}
+                                    </span>
+                                </div>
+
+                                <div className="text-sm text-slate-400 mt-4 text-center bg-slate-800/80 py-2 rounded border border-slate-600/50 shadow-md">
+                                    * 매수 5단계(최고) ~ 중립(0) ~ 매도 5단계(최고) | <span className="text-yellow-400 font-bold">{currentExpert.name}</span>의 관점
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900/80 border border-slate-600 rounded-lg p-4 mb-6 text-center shadow-inner">
+                                <div className="flex items-center justify-center gap-2 text-yellow-400 font-bold text-sm mb-1">
+                                    <Wallet className="w-4 h-4" /> 추천 실행 전략
+                                </div>
+                                <div className="text-white font-semibold text-lg">{analysis ? analysis.detailedAction : "---"}</div>
+                            </div>
+                            <div className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
+                                <h4 className={`text-sm font-bold mb-3 flex items-center gap-2 ${currentExpert.color}`}>
+                                    <UserCheck className="w-4 h-4" /> {currentExpert.name}의 시각
+                                </h4>
+                                <p className="text-slate-200 text-sm leading-relaxed italic">"{analysis ? analysis.expertOpinion : "데이터를 분석하고 있습니다..."}"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 4. 분할 매수/매도 전략 (목표가) */}
+                    <div className="w-full">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-700 pb-3 mb-4 gap-2">
+                        <h3 className="text-slate-200 text-2xl font-bold pl-1 flex items-center gap-2">
+                            <Target className={`w-7 h-7 ${tradeType === 'SELL' ? 'text-red-500' : 'text-green-500'}`} /> 
+                            분할 {tradeType === 'SELL' ? '매도' : '매수'} 전략 (목표가)
+                        </h3>
+                        <div className="flex flex-col items-end gap-2">
+                            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-600">
+                                    <button 
+                                        onClick={() => setTradeType('BUY')}
+                                        className={`px-4 py-1.5 text-sm font-bold rounded transition-colors flex items-center gap-1 ${tradeType === 'BUY' ? 'bg-green-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+                                    >
+                                        <ArrowDownCircle className="w-4 h-4" /> 매수 전략
+                                    </button>
+                                    <button 
+                                        onClick={() => setTradeType('SELL')}
+                                        className={`px-4 py-1.5 text-sm font-bold rounded transition-colors flex items-center gap-1 ${tradeType === 'SELL' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+                                    >
+                                        <ArrowUpCircle className="w-4 h-4" /> 매도 전략
+                                    </button>
+                            </div>
+
+                            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-600">
+                                {[3, 4, 5].map(count => (
+                                    <button
+                                        key={count}
+                                        onClick={() => setSplitCount(count)}
+                                        className={`px-3 py-1 text-xs font-bold rounded transition-colors ${splitCount === count ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+                                    >
+                                        {count}차
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                        {analysis?.strategies?.map((strat, idx) => (
+                            <div key={idx} className={`bg-slate-800 rounded-xl p-5 border-l-8 ${strat.color} shadow-lg relative`}>
+                                <div className="absolute top-3 right-3 bg-black/30 px-2 py-1 rounded text-[10px] text-slate-400 border border-white/10 flex items-center gap-1">
+                                    {strat.source.includes('전문가') ? <CheckCircle className="w-3 h-3 text-green-400"/> : <Info className="w-3 h-3"/>}
+                                    {strat.source}
+                                </div>
+
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                    <div className={`font-bold text-2xl ${strat.color.split(' ')[1]}`}>{strat.term}</div>
+                                    <div className="text-base text-slate-400 mt-1 font-medium">{strat.desc}</div>
+                                    </div>
+                                    <Clock className={`w-6 h-6 ${strat.color.split(' ')[1]} opacity-50`} />
+                                </div>
+                                
+                                <div className={`grid gap-3 mt-2 ${splitCount === 3 ? 'grid-cols-3' : splitCount === 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3 md:grid-cols-5'}`}>
+                                    {strat.steps.map((step, stepIdx) => (
+                                        <div key={stepIdx} className="bg-slate-900/60 p-2 py-3 rounded-lg text-center border border-slate-700/50 relative min-h-[90px] flex flex-col justify-center overflow-hidden">
+                                            <div className="absolute top-1 left-1 text-[9px] text-slate-500 border border-slate-600 px-1 rounded bg-slate-800">{step.label}</div>
+                                            <div className={`mt-5 mb-2 font-mono font-bold text-slate-100 tracking-tight whitespace-nowrap ${getPriceFontSize(step.price, splitCount)}`}>
+                                                {Math.floor(Number(step.price)).toLocaleString()}
+                                            </div>
+                                            <div className="flex flex-col items-center justify-center gap-0.5">
+                                                <div className="text-sm font-bold text-yellow-500 flex items-center gap-1">
+                                                    <PieChart className="w-4 h-4" /> {step.ratio}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                <div className="mt-3 pt-3 border-t border-slate-700/50 flex justify-between items-center text-xs text-slate-500 px-1">
+                                    <span className="flex items-center gap-1">
+                                        {tradeType === 'SELL' ? <ArrowUpCircle className="w-3 h-3"/> : <ArrowDownCircle className="w-3 h-3"/>} 
+                                        {tradeType === 'SELL' ? '일괄 매도(목표가) 참고:' : '일괄 매수(지지선) 참고:'}
+                                    </span>
+                                    <span className="font-mono text-slate-300">{Math.floor(Number(strat.lumpSumPrice)).toLocaleString()} KRW ({strat.lumpSumRatio})</span>
+                                </div>
+                            </div>
+                        ))}
+                        {!analysis && (
+                            <div className="text-center text-slate-500 text-sm py-4">분석 데이터를 불러오는 중...</div>
+                        )}
+                    </div>
+                    </div>
+
+                    {/* 5. 전략적 일괄 매수/매도 (All-in Exit) */}
+                    <div className="w-full">
+                    <h3 className="text-slate-200 text-xl font-bold pl-1 flex items-center gap-2 border-b border-slate-700 pb-3 mb-2">
+                        <LogOut className={`w-7 h-7 ${tradeType === 'SELL' ? 'text-red-500' : 'text-green-500'}`} /> 
+                        전략적 일괄 {tradeType === 'SELL' ? '매도' : '매수'} (All-in Strategy)
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* 익절/진입 카드 */}
+                        <div className={`rounded-xl p-5 border shadow-lg ${analysis?.lumpSumStrategy.profit.className || 'bg-slate-800 border-slate-700'}`}>
+                            <div className="flex items-center gap-2 mb-3">
+                                {tradeType === 'SELL' ? <ArrowUpCircle className="w-6 h-6 text-red-400" /> : <ArrowDownCircle className="w-6 h-6 text-green-400" />}
+                                <h4 className="font-bold text-xl text-slate-200">{analysis?.lumpSumStrategy.profit.title}</h4>
+                            </div>
+                            <div className="bg-slate-900/80 p-4 rounded-lg text-center mb-3 overflow-hidden">
+                                <div className="text-lg font-bold text-slate-300 mb-2">
+                                    {tradeType === 'SELL' ? '목표가 (Target Price)' : '진입가 (Entry Price)'}
+                                </div>
+                                <div className={`font-mono font-black whitespace-nowrap ${tradeType === 'SELL' ? 'text-red-400' : 'text-green-400'} text-3xl`}>
+                                    {analysis ? Math.floor(Number(analysis.lumpSumStrategy.profit.price)).toLocaleString() : '-'}
+                                </div>
+                            </div>
+                            <div className="text-sm font-medium text-slate-300 flex items-center gap-2 justify-center">
+                                <Info className="w-4 h-4"/> {analysis?.lumpSumStrategy.profit.condition}
+                            </div>
+                        </div>
+
+                        {/* 손절/관망 카드 */}
+                        <div className={`rounded-xl p-5 border shadow-lg ${analysis?.lumpSumStrategy.stopLoss.className || 'bg-slate-800 border-slate-700'}`}>
+                            <div className="flex items-center gap-2 mb-3">
+                                <ArrowDownCircle className="w-6 h-6 text-blue-400" />
+                                <h4 className="font-bold text-xl text-slate-200">{analysis?.lumpSumStrategy.stopLoss.title}</h4>
+                            </div>
+                            <div className="bg-slate-900/80 p-4 rounded-lg text-center mb-3 overflow-hidden">
+                                <div className="text-lg font-bold text-slate-300 mb-2">
+                                    {tradeType === 'SELL' ? '이탈가 (Stop Price)' : '관망가 (Wait Price)'}
+                                </div>
+                                <div className="font-mono font-black text-blue-400 whitespace-nowrap text-3xl">
+                                    {analysis ? Math.floor(Number(analysis.lumpSumStrategy.stopLoss.price)).toLocaleString() : '-'}
+                                </div>
+                            </div>
+                            <div className="text-sm font-medium text-slate-300 flex items-center gap-2 justify-center">
+                                <AlertTriangle className="w-4 h-4"/> {analysis?.lumpSumStrategy.stopLoss.condition}
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+
+                    <div className="pt-4 w-full text-center">
+                        <div className="flex justify-center items-center gap-1 text-base font-medium text-slate-400">
+                            <Info className="w-4 h-4"/> {lastUpdated ? `업데이트: ${lastUpdated}` : '대기 중'}
+                        </div>
+                    </div>
+                </div>
+
+                <footer className="w-full bg-slate-900 border-t border-slate-800 py-10 mt-12">
+                    <div className="flex flex-col items-center justify-center gap-6">
+                        <div className="max-w-5xl px-6 w-full">
+                            <div className="bg-gradient-to-b from-slate-800 to-slate-900 p-6 rounded-xl border border-slate-700 shadow-lg">
+                                <h5 className="text-slate-300 font-bold mb-2 text-base flex items-center justify-center gap-2">
+                                    <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                                    투자 유의사항 및 책임 고지
+                                </h5>
+                                <p className="text-sm text-slate-400 leading-relaxed text-left break-keep">
+                                    본 서비스에서 제공하는 모든 데이터와 전략 분석은 투자판단의 참고자료일 뿐이며, 투자를 권유하거나 암시하지 않습니다. 
+                                    제공되는 정보는 지연되거나 오류가 있을 수 있으며, 전문가의 견해는 실제 시장 상황과 다를 수 있습니다. <br/>
+                                    <span className="text-slate-300 font-semibold">모든 투자의 책임은 전적으로 투자자 본인에게 있으며</span>, 서비스 제공자는 이에 대해 어떠한 법적 책임도 지지 않습니다.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 opacity-80 mt-2">
+                            {logoError ? (
+                                <div className="flex items-center gap-1">
+                                    <Zap className="w-5 h-5 text-cyan-400" />
+                                    <span className="font-bold text-lg text-cyan-400">0xJKLab</span>
+                                </div>
+                            ) : (
+                                <img 
+                                    src="/0xJKLab.jpg" 
+                                    alt="0xJKLab Logo" 
+                                    className="w-8 h-8 rounded-none" 
+                                    onError={(e) => e.target.style.display='none'}
+                                />
+                            )}
+                            <span className="text-slate-400 text-lg font-medium">© 2025 0xJKLab & 메밀꽃이야기. All Rights Reserved.</span>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<CryptoDashboard />);
+    </script>
+</body>
+</html>
