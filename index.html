@@ -115,6 +115,41 @@
                 style: 'fuzz',
                 color: 'text-violet-400'
             },
+            // --- 추가된 전문가 3인 ---
+            {
+                id: 'pyo',
+                name: '표상록 (Pyo)',
+                category: '국내',
+                feature: '블록체인 기술 & 펀더멘탈',
+                title: '블록엑스(BlockX) 대표',
+                reason: '"기술적 가치와 시장의 접점 분석"',
+                achievement: '초기 블록체인 프로젝트 발굴 및 기술적 가치 분석을 통한 중장기 투자 인사이트 제공.',
+                style: 'fundamental', 
+                color: 'text-cyan-400'
+            },
+            {
+                id: 'park_writer',
+                name: '박종환 (Park Writer)',
+                category: '국내',
+                feature: '거시경제 & 심층 리포트',
+                title: '박작가의 크립토연구소',
+                reason: '"매크로와 크립토의 연결고리"',
+                achievement: '금리, 인플레이션 등 거시 경제 지표와 비트코인 사이클을 연결하여 깊이 있는 시황 분석 제공.',
+                style: 'macro_writer', 
+                color: 'text-emerald-400'
+            },
+            {
+                id: 'time_leverage',
+                name: '문창훈 (Time Leverage)',
+                category: '국내',
+                feature: '시간 여행 & DCA',
+                title: '유튜버 타임레버리지',
+                reason: '"시간을 레버리지로 삼는 투자"',
+                achievement: '단기 변동성에 일희일비하지 않고 우량 자산(BTC, XRP 등)을 꾸준히 모아가는 DCA 전략 설파.',
+                style: 'time_leverage',
+                color: 'text-amber-500'
+            },
+            // ----------------------
             {
                 id: 'ki_young_ju',
                 name: '주기영 (Ki Young Ju)',
@@ -379,21 +414,33 @@
                 switch (expert.style) {
                 case 'davinci':
                 case 'philosophy':
+                case 'time_leverage': // 문창훈 (Time Leverage) - similar to HODL/DCA
                     analysisSource = `${expert.name} 견해`;
                     if (rsi > 85) { score += 20; expertOpinion = "가격 폭등 중! 즐기되 물량은 지키세요."; } 
                     else if (rsi < 35) { score -= 40; expertOpinion = "공포 구간? 아니요, 인생을 바꿀 기회입니다. Buy!"; } 
-                    else { score -= 20; expertOpinion = "흔들리지 마세요. 우상향 믿음을 가지세요."; }
+                    else { score -= 20; expertOpinion = "흔들리지 마세요. 우상향 믿음을 가지세요. 시간을 레버리지하세요."; }
                     if (type === 'SELL') { targetMultiplierShort = 1.05; targetMultiplierMedium = 1.3; targetMultiplierLong = 2.0; }
                     else { targetMultiplierShort = 0.95; targetMultiplierMedium = 0.85; targetMultiplierLong = 0.7; } 
                     break;
 
                 case 'fuzz':
+                case 'fundamental': // 표상록
                     analysisSource = `${expert.name} 견해`;
-                    if (rsi > 75) { score += 30; expertOpinion = "단기 과열. 리스크 관리하며 부분 익절 고려하세요."; } 
-                    else if (rsi < 30) { score -= 30; expertOpinion = "과매도 진입. 바닥 잡기 좋은 구간입니다."; } 
-                    else { score = 45; expertOpinion = "추세 양호합니다. 잦은 매매보다 엉덩이 무겁게 버티세요."; }
+                    if (rsi > 75) { score += 30; expertOpinion = "단기 과열 또는 고평가 구간. 리스크 관리하며 부분 익절 고려하세요."; } 
+                    else if (rsi < 30) { score -= 30; expertOpinion = "과매도 또는 저평가 진입. 바닥 잡기 좋은 구간입니다."; } 
+                    else { score = 45; expertOpinion = "펀더멘탈과 추세가 양호합니다. 잦은 매매보다 가치 투자가 유효합니다."; }
                     if (type === 'SELL') { targetMultiplierShort = 1.03; targetMultiplierMedium = 1.15; targetMultiplierLong = 1.618; }
                     else { targetMultiplierShort = 0.98; targetMultiplierMedium = 0.92; targetMultiplierLong = 0.85; }
+                    break;
+
+                case 'bull_tv':
+                case 'opportunity':
+                case 'cycle':
+                case 'macro_writer': // 박종환
+                    analysisSource = `${expert.name} 견해`;
+                    if (currentPrice > ma20) { score -= 20; expertOpinion = "상승 추세 및 매크로 환경이 긍정적입니다. 불타기 가능한 구간입니다."; } 
+                    else { score += 20; expertOpinion = "단기 추세가 꺾였거나 거시 지표가 불안합니다. 현금화 후 관망하세요."; }
+                    targetMultiplierShort = 1.04; targetMultiplierMedium = 1.15; targetMultiplierLong = 1.5;
                     break;
 
                 default: 
@@ -571,70 +618,66 @@
 
             return (
                 <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-4 md:p-8 pb-16 relative">
-                <header className="flex flex-col gap-6 border-b border-slate-700 pb-6 max-w-6xl mx-auto w-full">
-                    {/* 제목 영역 */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3">
-                            <div>
-                                <h1 className="text-lg sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent flex items-center gap-2 whitespace-nowrap">
-                                전문가 스타일로 분석한 실전 매매 시뮬레이션
-                                </h1>
-                                <p className="text-slate-400 text-lg mt-2 flex items-center gap-2 font-medium">
-                                <UserCheck className="w-5 h-5" />
-                                <span>재미로 보는 크립토 매매 전략</span>
-                                </p>
-                            </div>
-                        </div>
+                <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4 border-b border-slate-700 pb-6 max-w-6xl mx-auto w-full">
+                    <div className="flex items-center gap-3">
+                    <div>
+                        <h1 className="text-lg sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent flex items-center gap-2 whitespace-nowrap">
+                        전문가 스타일로 분석한 실전 매매 시뮬레이션
+                        </h1>
+                        <p className="text-slate-400 text-lg mt-2 flex items-center gap-2 font-medium">
+                        <UserCheck className="w-5 h-5" />
+                        <span>재미로 보는 크립토 매매 전략</span>
+                        </p>
+                    </div>
                     </div>
                     
-                    {/* 컨트롤러 영역: 티커명, 전문가, 실행 버튼 (부제목 아래 위치) */}
-                    <div className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm">
-                        <div className="flex flex-wrap items-end gap-4">
-                            <div className="flex flex-col gap-1">
-                                <span className="text-xs text-slate-400 font-bold ml-1">티커명</span>
-                                <div className="flex items-center gap-2">
-                                    <select 
-                                        value={selectedCoin} 
-                                        onChange={(e) => setSelectedCoin(e.target.value)}
-                                        className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-auto min-w-[160px]"
-                                    >
-                                        {coins.map(c => <option key={c.code} value={c.code}>{c.name} ({c.ticker})</option>)}
-                                        <option value="CUSTOM">기타 (직접입력)</option>
-                                    </select>
-                                    {selectedCoin === 'CUSTOM' && (
-                                        <input type="text" value={customTickerInput} onChange={(e) => setCustomTickerInput(e.target.value)} placeholder="예: KRW-ADA" className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-32" />
-                                    )}
-                                </div>
+                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-end gap-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs text-slate-400 font-bold ml-1">티커명</span>
+                            <div className="flex items-center gap-2">
+                                <select 
+                                    value={selectedCoin} 
+                                    onChange={(e) => setSelectedCoin(e.target.value)}
+                                    className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-auto min-w-[160px]"
+                                >
+                                    {coins.map(c => <option key={c.code} value={c.code}>{c.name} ({c.ticker})</option>)}
+                                    <option value="CUSTOM">기타 (직접입력)</option>
+                                </select>
+                                {selectedCoin === 'CUSTOM' && (
+                                    <input type="text" value={customTickerInput} onChange={(e) => setCustomTickerInput(e.target.value)} placeholder="예: KRW-ADA" className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-32" />
+                                )}
                             </div>
-
-                            <div className="h-8 w-px bg-slate-600 mx-1 hidden md:block mb-1"></div>
-
-                            <div className="flex flex-col gap-1 flex-1 min-w-[300px]">
-                                <span className="text-xs text-slate-400 font-bold ml-1">전문가</span>
-                                <div className="relative w-full">
-                                    <select 
-                                        value={selectedExpertId}
-                                        onChange={(e) => setSelectedExpertId(e.target.value)}
-                                        className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-full"
-                                    >
-                                        <optgroup label="🇰🇷 국내 전문가">
-                                            {EXPERTS.filter(e => e.category === '국내').map(e => (
-                                                <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
-                                            ))}
-                                        </optgroup>
-                                        <optgroup label="🌎 해외 전문가">
-                                            {EXPERTS.filter(e => e.category === '해외').map(e => (
-                                                <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
-                                            ))}
-                                        </optgroup>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <button onClick={loadData} className={`bg-blue-600 hover:bg-blue-700 p-2 rounded text-white transition-all h-10 mb-0 ${loading ? 'opacity-50' : ''}`} title="분석 실행">
-                                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                            </button>
                         </div>
+
+                        <div className="h-8 w-px bg-slate-600 mx-1 hidden md:block mb-1"></div>
+
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs text-slate-400 font-bold ml-1">전문가</span>
+                            <div className="relative">
+                                <select 
+                                    value={selectedExpertId}
+                                    onChange={(e) => setSelectedExpertId(e.target.value)}
+                                    className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm w-56 md:w-80 h-10"
+                                >
+                                    <optgroup label="🇰🇷 국내 전문가">
+                                        {EXPERTS.filter(e => e.category === '국내').map(e => (
+                                            <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
+                                        ))}
+                                    </optgroup>
+                                    <optgroup label="🌎 해외 전문가">
+                                        {EXPERTS.filter(e => e.category === '해외').map(e => (
+                                            <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
+                                        ))}
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onClick={loadData} className={`bg-blue-600 hover:bg-blue-700 p-2 rounded text-white transition-all h-10 mb-0 ${loading ? 'opacity-50' : ''}`} title="분석 실행">
+                            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                        </button>
+                    </div>
                     </div>
                 </header>
 
