@@ -618,66 +618,70 @@
 
             return (
                 <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-4 md:p-8 pb-16 relative">
-                <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4 border-b border-slate-700 pb-6 max-w-6xl mx-auto w-full">
-                    <div className="flex items-center gap-3">
-                    <div>
-                        <h1 className="text-lg sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent flex items-center gap-2 whitespace-nowrap">
-                        전문가 스타일로 분석한 실전 매매 시뮬레이션
-                        </h1>
-                        <p className="text-slate-400 text-lg mt-2 flex items-center gap-2 font-medium">
-                        <UserCheck className="w-5 h-5" />
-                        <span>재미로 보는 크립토 매매 전략</span>
-                        </p>
-                    </div>
+                <header className="flex flex-col gap-6 border-b border-slate-700 pb-6 max-w-6xl mx-auto w-full">
+                    {/* 제목 영역 */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                            <div>
+                                <h1 className="text-lg sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent flex items-center gap-2 whitespace-nowrap">
+                                전문가 스타일로 분석한 실전 매매 시뮬레이션
+                                </h1>
+                                <p className="text-slate-400 text-lg mt-2 flex items-center gap-2 font-medium">
+                                <UserCheck className="w-5 h-5" />
+                                <span>재미로 보는 크립토 매매 전략</span>
+                                </p>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                    <div className="flex flex-wrap items-end gap-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs text-slate-400 font-bold ml-1">티커명</span>
-                            <div className="flex items-center gap-2">
-                                <select 
-                                    value={selectedCoin} 
-                                    onChange={(e) => setSelectedCoin(e.target.value)}
-                                    className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-auto min-w-[160px]"
-                                >
-                                    {coins.map(c => <option key={c.code} value={c.code}>{c.name} ({c.ticker})</option>)}
-                                    <option value="CUSTOM">기타 (직접입력)</option>
-                                </select>
-                                {selectedCoin === 'CUSTOM' && (
-                                    <input type="text" value={customTickerInput} onChange={(e) => setCustomTickerInput(e.target.value)} placeholder="예: KRW-ADA" className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-32" />
-                                )}
+                    {/* 컨트롤러 영역: 티커명, 전문가, 실행 버튼 (부제목 아래 위치) */}
+                    <div className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm">
+                        <div className="flex flex-wrap items-end gap-4">
+                            <div className="flex flex-col gap-1">
+                                <span className="text-xs text-slate-400 font-bold ml-1">티커명</span>
+                                <div className="flex items-center gap-2">
+                                    <select 
+                                        value={selectedCoin} 
+                                        onChange={(e) => setSelectedCoin(e.target.value)}
+                                        className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-auto min-w-[160px]"
+                                    >
+                                        {coins.map(c => <option key={c.code} value={c.code}>{c.name} ({c.ticker})</option>)}
+                                        <option value="CUSTOM">기타 (직접입력)</option>
+                                    </select>
+                                    {selectedCoin === 'CUSTOM' && (
+                                        <input type="text" value={customTickerInput} onChange={(e) => setCustomTickerInput(e.target.value)} placeholder="예: KRW-ADA" className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-32" />
+                                    )}
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="h-8 w-px bg-slate-600 mx-1 hidden md:block mb-1"></div>
+                            <div className="h-8 w-px bg-slate-600 mx-1 hidden md:block mb-1"></div>
 
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs text-slate-400 font-bold ml-1">전문가</span>
-                            <div className="relative">
-                                <select 
-                                    value={selectedExpertId}
-                                    onChange={(e) => setSelectedExpertId(e.target.value)}
-                                    className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm w-56 md:w-80 h-10"
-                                >
-                                    <optgroup label="🇰🇷 국내 전문가">
-                                        {EXPERTS.filter(e => e.category === '국내').map(e => (
-                                            <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
-                                        ))}
-                                    </optgroup>
-                                    <optgroup label="🌎 해외 전문가">
-                                        {EXPERTS.filter(e => e.category === '해외').map(e => (
-                                            <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
-                                        ))}
-                                    </optgroup>
-                                </select>
+                            <div className="flex flex-col gap-1 flex-1 min-w-[300px]">
+                                <span className="text-xs text-slate-400 font-bold ml-1">전문가</span>
+                                <div className="relative w-full">
+                                    <select 
+                                        value={selectedExpertId}
+                                        onChange={(e) => setSelectedExpertId(e.target.value)}
+                                        className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-full"
+                                    >
+                                        <optgroup label="🇰🇷 국내 전문가">
+                                            {EXPERTS.filter(e => e.category === '국내').map(e => (
+                                                <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
+                                            ))}
+                                        </optgroup>
+                                        <optgroup label="🌎 해외 전문가">
+                                            {EXPERTS.filter(e => e.category === '해외').map(e => (
+                                                <option key={e.id} value={e.id}>{e.name} [{e.feature}]</option>
+                                            ))}
+                                        </optgroup>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
 
-                        <button onClick={loadData} className={`bg-blue-600 hover:bg-blue-700 p-2 rounded text-white transition-all h-10 mb-0 ${loading ? 'opacity-50' : ''}`} title="분석 실행">
-                            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                        </button>
-                    </div>
+                            <button onClick={loadData} className={`bg-blue-600 hover:bg-blue-700 p-2 rounded text-white transition-all h-10 mb-0 ${loading ? 'opacity-50' : ''}`} title="분석 실행">
+                                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                            </button>
+                        </div>
                     </div>
                 </header>
 
