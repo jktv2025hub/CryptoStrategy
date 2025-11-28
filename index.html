@@ -115,7 +115,7 @@
                 style: 'fuzz',
                 color: 'text-violet-400'
             },
-            // --- 추가된 전문가 3인 ---
+            // --- 추가된 전문가 ---
             {
                 id: 'pyo',
                 name: '표상록 (Pyo)',
@@ -138,6 +138,19 @@
                 style: 'macro_writer', 
                 color: 'text-emerald-400'
             },
+            // --- [NEW] 4번째 위치 ---
+            {
+                id: 'baek_hoon_jong',
+                name: '백훈종 (Hoon Jong Baek)',
+                category: '국내',
+                feature: '비트코인 스탠다드',
+                title: '샌드뱅크 COO & 저자',
+                reason: '"화폐 현상과 비트코인의 본질"',
+                achievement: '저서 \'전지적 비트코인 시점\'을 통해 비트코인이 단순 투기 자산이 아닌 혁명적 화폐임을 입증하며 비트코인 맥시멀리즘 전파.',
+                style: 'bitcoin_maximalist',
+                color: 'text-orange-500'
+            },
+            // ----------------------
             {
                 id: 'time_leverage',
                 name: '문창훈 (Time Leverage)',
@@ -149,7 +162,6 @@
                 style: 'time_leverage',
                 color: 'text-amber-500'
             },
-            // ----------------------
             {
                 id: 'ki_young_ju',
                 name: '주기영 (Ki Young Ju)',
@@ -414,7 +426,8 @@
                 switch (expert.style) {
                 case 'davinci':
                 case 'philosophy':
-                case 'time_leverage': // 문창훈 (Time Leverage) - similar to HODL/DCA
+                case 'time_leverage': 
+                case 'bitcoin_maximalist': // 백훈종 (Bitcoin Maximalist/Standard)
                     analysisSource = `${expert.name} 견해`;
                     if (rsi > 85) { score += 20; expertOpinion = "가격 폭등 중! 즐기되 물량은 지키세요."; } 
                     else if (rsi < 35) { score -= 40; expertOpinion = "공포 구간? 아니요, 인생을 바꿀 기회입니다. Buy!"; } 
@@ -656,13 +669,13 @@
 
                             <div className="h-8 w-px bg-slate-600 mx-1 hidden md:block mb-1"></div>
 
-                            <div className="flex flex-col gap-1 flex-1 min-w-[300px]">
+                            <div className="flex flex-col gap-1">
                                 <span className="text-xs text-slate-400 font-bold ml-1">전문가</span>
-                                <div className="relative w-full">
+                                <div className="relative">
                                     <select 
                                         value={selectedExpertId}
                                         onChange={(e) => setSelectedExpertId(e.target.value)}
-                                        className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm h-10 w-full"
+                                        className="bg-slate-700 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-500 text-sm w-56 md:w-80 h-10"
                                     >
                                         <optgroup label="🇰🇷 국내 전문가">
                                             {EXPERTS.filter(e => e.category === '국내').map(e => (
@@ -779,20 +792,20 @@
                                 <div className="relative w-full flex justify-between gap-1 border-4 border-slate-500 rounded-lg p-1 bg-slate-800 shadow-xl">
                                     {/* Buy Steps (5-1) */}
                                     {sentimentSegments.slice(0, 5).map((seg, i) => (
-                                        <div key={`buy-${i}`} className={`h-8 flex-1 rounded-sm transition-all duration-300 flex items-center justify-center text-[12px] font-black ${seg.color} ${activeIndex === i ? 'ring-2 ring-white opacity-100 scale-110 z-10 shadow-lg' : 'opacity-30'}`}>
+                                        <div key={`buy-${i}`} className={`h-8 flex-1 rounded-sm transition-all duration-300 flex items-center justify-center text-[12px] font-black ${seg.color} ${activeIndex === i ? 'ring-2 ring-white opacity-100 scale-110 z-10 shadow-lg' : 'opacity-40'}`}>
                                             {/* 숫자 굵게 (font-black) */}
                                             <span className={activeIndex === i ? "text-white drop-shadow-md" : "text-slate-900/80"}>{seg.label}</span>
                                         </div>
                                     ))}
                                     
                                     {/* Neutral (0) */}
-                                    <div className={`h-8 flex-1 rounded-sm transition-all duration-300 bg-slate-500 flex items-center justify-center text-[12px] font-black ${activeIndex === 5 ? 'ring-2 ring-white opacity-100 scale-110 z-10 shadow-lg' : 'opacity-30'}`}>
+                                    <div className={`h-8 flex-1 rounded-sm transition-all duration-300 bg-slate-500 flex items-center justify-center text-[12px] font-black ${activeIndex === 5 ? 'ring-2 ring-white opacity-100 scale-110 z-10 shadow-lg' : 'opacity-40'}`}>
                                         <span className="text-white">0</span>
                                     </div>
 
                                     {/* Sell Steps (1-5) */}
                                     {sentimentSegments.slice(6).map((seg, i) => (
-                                        <div key={`sell-${i}`} className={`h-8 flex-1 rounded-sm transition-all duration-300 flex items-center justify-center text-[12px] font-black ${seg.color} ${activeIndex === i + 6 ? 'ring-2 ring-white opacity-100 scale-110 z-10 shadow-lg' : 'opacity-30'}`}>
+                                        <div key={`sell-${i}`} className={`h-8 flex-1 rounded-sm transition-all duration-300 flex items-center justify-center text-[12px] font-black ${seg.color} ${activeIndex === i + 6 ? 'ring-2 ring-white opacity-100 scale-110 z-10 shadow-lg' : 'opacity-40'}`}>
                                             <span className={activeIndex === i + 6 ? "text-white drop-shadow-md" : "text-slate-900/80"}>{seg.label}</span>
                                         </div>
                                     ))}
